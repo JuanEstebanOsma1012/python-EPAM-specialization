@@ -97,6 +97,3 @@ class WordCreator(Resource):
         words_list = words.split(',') if words else []
         result = word_creator(words_list)
         return {"status": 200, "result": result}, 200
-
-if __name__ == '__main__':
-    app.run(debug=True)
