@@ -1,10 +1,15 @@
 name: CI Pipeline
 
-on: [push, pull_request]   # triggers: when you push or make a PR
+on: [push, pull_request]
 
 jobs:
   build:
-    runs-on: ubuntu-latest  # GitHub gives you a Linux VM
+    runs-on: ubuntu-latest
+
+    permissions:
+      contents: read
+      packages: write   # required for pushing to GHCR
+
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -17,5 +22,22 @@ jobs:
       - name: Install dependencies
         run: pip install -r requirements.txt
 
-      - name: Runt test
+      - name: Run tests
         run: python3 test.py
+
+      # These steps will ONLY run if tests succeed
+      - name: Log in to GitHub Container Registry
+        if: success()
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build and push Docker image
+        if: success()
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          push: true
+          tags: ghcr.io/${{ github.repository_owner }}/my-app:latest
